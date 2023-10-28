@@ -1,0 +1,62 @@
+public with sharing class WkTwoHomework {
+    public WkTwoHomework() {
+
+    }
+
+    public static void listContacts () {
+        //Here is a method that includes a query for a List of contacts and returns the Account Name and Industry as well	
+        //KISS               
+        //List <Contact> listOfContacts = [SELECT Name, Account.Name, Account.Industry FROM Contact];
+        
+        Contact[] contactList = [SELECT Name, Account.Name, Account.Industry FROM Contact];
+        
+        //loop through each Contact and print the name of each contact's Account Name
+        for (Contact eachCon : contactList) {
+            String myContactInfo = 'Account Name: ' + eachCon.Account.Name + ' Industry: ' + eachCon.Account.Industry;
+           	System.debug ('Contact info: ' + myContactInfo);
+        }        
+    }
+    
+    public static void listAcctPlusOpps () {
+    /*A method that includes a query for a list of Accounts AND includes all their closed-won opportunities in a subquery. 
+    Use a loop to print out the name of each Account’s opportunity with System.debug.
+	*/
+       List <Account> acctPlusOpps = [SELECT Name,
+                                      	(SELECT Name, StageName
+                                         FROM Opportunities
+                                         WHERE StageName Like 'Closed Won')
+                                     FROM Account];
+         
+        /*for (Account acctPlusOpptys : [SELECT Name,
+                                      				(SELECT Name
+                                         			FROM Opportunities
+                                                    WHERE StageName Like 'Closed Won')
+                                    FROM Account])*/
+            
+            
+        System.debug ('Account Name: ' + acctPlusOpps[0].Name); // + ' Opp Name: ' + acctPlusOpps.get(Opportunities));
+    }    
+    
+    public static void OppMap () {
+        //A method that queries for Opportunity records that returns results in a map format.
+        Map <Id, Opportunity> mapWOpps = New Map <Id,Opportunity> ([
+            SELECT Name, StageName, CloseDate
+            FROM Opportunity
+            WHERE Amount > 1000 ]);
+        //WHERE CloseDate = System.Today()-30]);
+        System.debug ('Opp Map info: ' + mapWOpps);            
+    }
+    
+    public static void aggOppCount () {
+        //An aggregate results query that returns an integer equal to the total number of open opportunities in your org.
+        //Output total to debug.
+        integer totOpenOpps = [SELECT Count() 
+                               FROM Opportunity
+                               WHERE StageName != 'Closed%'];
+        
+        String msgOne 		= 'There are ';
+        String msgTwo 		= ' open opportunities!';
+        
+        System.debug (msgOne + totOpenOpps + msgTwo);        
+    }     
+}
