@@ -1,0 +1,17 @@
+trigger LeadTrigger on Lead (after insert, after update) {
+
+    //Instantiate LeadTH class
+    LeadTriggerHandler leadTH = new LeadTriggerHandler (Trigger.new, Trigger.oldMap);
+
+
+    //Determine executing trigger context and call method from handler class.
+    if (Trigger.isInsert){
+        if (Trigger.isAfter){
+            leadTH.handleAfterInsert();
+        }
+    } else if (Trigger.isUpdate) {
+        if (Trigger.isAfter) {
+            leadTH.handleAfterUpdate();
+        }        
+    }
+}
