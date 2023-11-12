@@ -1,0 +1,104 @@
+public with sharing class LeadTriggerHandler {
+    
+    //defining flag to prevent recursion by determining whether trigger has fired
+    static Boolean hasFired = false;
+
+
+    /* Constructor receives the Leads being processed by Lead trigger and assigns them to class variables
+    Variables must be in the same type and order as defined in the instantiated class within the trigger */
+    List <Lead> newLeads;
+    Map <Id, Lead> oldLeadsMap;
+
+    //Building first method which will contain the above variables.
+    public LeadTriggerHandler (List <Lead> newLeads, Map <Id, Lead> oldLeadsMap) {
+        this.newLeads = newLeads;
+        this.oldLeadsMap = oldLeadsMap;
+    }
+
+    
+    //Determine whether trigger has fired then route to appropriate method.
+    public void handleAfterInsert() {
+        if (hasFired){
+            return;
+        }
+        hasFired = true;
+        runAfterInsert();
+        hasFired = false; //reset flag
+    }
+
+    public void handleAfterUpdate() {
+        if (hasFired){
+            return;
+        }
+        hasFired = true;
+        runAfterUpdate();
+        hasFired = false; //reset flag
+    }
+
+
+    private void runAfterInsert() {
+        List<Task> listOfTasks = new List <Task>();
+
+        for (Lead l : this.newLeads) {
+            Task t          = new task ();
+            t.Subject       = 'Reminder to reach out to the New Lead';       //Only need to specify ownerId if it should be someone other than the current user
+            t.Status        = 'Open - Not Contacted';
+            t.WhoId         = l.Id;
+            t.Description   = 'Added by Trigger';
+
+            //add tasks to list
+            listOfTasks.add(t);
+        }
+        //generate List of Tasks, then insert tasks
+
+        insert listOfTasks;
+    }
+
+
+    private void runAfterUpdate() {
+        /*Map of Leads (generate query based on the Leads from the trigger
+        List of all Leads that Tasks that match the id in newLeads*/
+
+        Map <Id, Lead> leadsWithTasksMap = new Map <Id, Lead> (
+        [SELECT Id,
+            (SELECT Id
+            FROM Tasks)
+        FROM Lead 
+        WHERE Id IN :this.newLeads]);
+
+        //Need container to store relevant Tasks
+        Task[] newTasks;
+        //List<Task> newTasks = new List<Task>();
+        
+
+        //Loop through each Lead to find the ones that have a changed Product Interest
+        for (Lead updatedLead : this.NewLeads) {
+            //Get the old version for comparison
+            Lead oldLead = this.oldLeadsMap.get(updatedLead.Id);
+
+            //compare the old ProductInterest values to the new ProdInterest they are not the same then add that record to list
+            if (oldLead.ProductInterest__c != updatedLead.ProductInterest__c){
+                System.Debug('Found ' + leadsWithTasksMap.get(updatedLead.Id).Tasks.size() + ' Task(s) on these Leads!');
+
+                //now that only the changed leads have been identified, add a new task
+                List<Task> listOfTasks = new List <Task>();
+
+                //Check to make sure there are records to compare
+                if (leadsWithTasksMap.get(updatedLead.Id).Tasks.size()>0) {
+                    for (Lead l : this.newLeads) {
+                        Task t          = new task ();
+                        t.Subject       = 'Note: The Lead has an updated Product Interest';       //Only need to specify ownerId if it should be someone other than the current user
+                        t.Status        = 'In Progress';
+                        t.WhoId         = l.Id;
+                        t.Description   = 'Updated by Trigger';
+            
+                        //add tasks to list
+                        listOfTasks.add(t);
+                    }
+                    //generate List of Tasks, then insert tasks            
+                    insert listOfTasks;
+                }                
+            }                
+        }
+    }
+}
