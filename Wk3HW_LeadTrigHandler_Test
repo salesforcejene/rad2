@@ -1,0 +1,31 @@
+@isTest
+public with sharing class LeadTriggerHandler_Test {
+    
+    @isTest static void LeadTriggerHandlers_Test() {
+        //try to insert lead
+        Lead l          = new Lead ();
+        l.FirstName     = 'Johnny';
+        l.LastName      = 'Full';
+        l.Company       = 'Fuller Inc.';
+        l.Description   = 'Added via Trigger test';
+
+        System.debug('New Lead added: ' + l.FirstName + ' '+  l.LastName + ' '+ + l.Description);
+
+        insert l;
+
+        List <Task> t = new List <Task> ();
+        Task [] listOfTasks = [SELECT WhoId, Subject, Status
+                              FROM Task
+                              WHERE Id = :l.Id];
+
+        System.debug ('There are ' + listOfTasks.size() + ' records!');
+
+    
+        Test.startTest();
+        if (listOfTasks.size()>0) {
+            insert t;
+            System.assertEquals('New Task', t[0].Subject,'Message to Jene');
+        }
+        Test.stopTest();        
+    }
+}
